@@ -1,0 +1,7 @@
+// AVD: RDP Drive Redirection (\\tsclient) File Activity
+// Tactics: Exfiltration, Collection
+// Requires Microsoft Defender for Endpoint (DeviceFileEvents / DeviceProcessEvents)
+DeviceFileEvents
+| where FolderPath has "\\\\tsclient\\" or InitiatingProcessCommandLine has "\\\\tsclient\\"
+| summarize EventCount = count(), SamplePath = any(FolderPath) by DeviceName, InitiatingProcessAccountName
+| project DeviceName, AccountName = InitiatingProcessAccountName, EventCount, SamplePath

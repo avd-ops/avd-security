@@ -8,7 +8,7 @@ param(
     [ValidateSet('lab', 'enterprise')]
     [string]$CostProfile = 'lab',
 
-    [ValidateSet('commercial')]
+    [ValidateSet('commercial', 'usgov')]
     [string]$CloudProfile = 'commercial',
 
     [ValidatePattern('^[a-z0-9-]{3,16}$')]

@@ -18,16 +18,17 @@
     },
     "mode": {
       "type": "string",
-      "enum": ["self-reported", "offline", "live"]
+      "enum": ["c11-facts", "self-reported", "offline", "live"]
     },
     "summary": {
       "type": "object",
-      "required": ["total", "pass", "warn", "fail"],
+      "required": ["total", "pass", "warn", "fail", "unknown"],
       "properties": {
         "total": { "type": "integer", "minimum": 0 },
         "pass": { "type": "integer", "minimum": 0 },
         "warn": { "type": "integer", "minimum": 0 },
-        "fail": { "type": "integer", "minimum": 0 }
+        "fail": { "type": "integer", "minimum": 0 },
+        "unknown": { "type": "integer", "minimum": 0 }
       },
       "additionalProperties": false
     },
@@ -40,7 +41,7 @@
           "id": { "type": "string" },
           "assessCheckId": { "type": "string" },
           "pillar": { "type": "string" },
-          "status": { "type": "string", "enum": ["pass", "warn", "fail"] },
+          "status": { "type": "string", "enum": ["pass", "warn", "fail", "unknown"] },
           "claimRef": { "type": "string" },
           "message": { "type": "string" },
           "remediationHint": { "type": "string" }

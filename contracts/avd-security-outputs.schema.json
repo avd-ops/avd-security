@@ -26,7 +26,7 @@
     },
     "cloudProfile": {
       "type": "string",
-      "enum": ["commercial"]
+      "enum": ["commercial", "usgov"]
     },
     "defenderPlansDeployed": {
       "type": "boolean"

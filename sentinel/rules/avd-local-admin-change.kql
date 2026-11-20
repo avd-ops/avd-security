@@ -1,0 +1,7 @@
+// AVD: Local Administrators Group Modification
+// Tactics: Persistence, PrivilegeEscalation
+// Monitors Windows Security Event 4732 (member added to security-enabled local group)
+SecurityEvent
+| where EventID == 4732
+| where TargetUserName =~ "Administrators"
+| project TimeGenerated, Computer, SubjectUserName, MemberName, TargetUserName

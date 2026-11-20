@@ -7,9 +7,10 @@ targetScope = 'subscription'
 ])
 param costProfile string = 'lab'
 
-@description('Target Azure cloud profile. Currently commercial only; usgov policy parity is pending C19 verification.')
+@description('Target Azure cloud profile aligned with avd-assess C19 cloud-environments.json.')
 @allowed([
   'commercial'
+  'usgov'
 ])
 param cloudProfile string = 'commercial'
 
