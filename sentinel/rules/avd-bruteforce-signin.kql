@@ -1,7 +1,20 @@
-// AVD: Repeated Failed Sign-In Attempts
+// AVD: Credential Brute-Force or Password Spray
 // Tactics: CredentialAccess, InitialAccess
-SigninLogs
-| where AppDisplayName has "Azure Virtual Desktop" or AppDisplayName has "Windows Virtual Desktop"
-| where ResultType != "0"
-| summarize FailedCount = count(), DistinctIPs = dcount(IPAddress) by UserPrincipalName, bin(TimeGenerated, 30m)
+// AppIds: 9cdead84-a844-4324-93f2-b2e6bb768d07 (Azure Virtual Desktop),
+//         270efc09-cd0d-444b-a71f-39af4910ec45 (Windows Cloud Login)
+// Credential failure ResultTypes only (excludes MFA prompts 50074/50076 and CA blocks):
+//   50126 (invalid username/password), 50053 (locked), 50055 (expired), 50057 (disabled), 50011 (reply URL)
+let avdApps = dynamic(["9cdead84-a844-4324-93f2-b2e6bb768d07", "270efc09-cd0d-444b-a71f-39af4910ec45"]);
+let credFailures = dynamic(["50126", "50053", "50055", "50057", "50011"]);
+let base = union isfuzzy=true SigninLogs, AADNonInteractiveUserSignInLogs
+| where AppId in (avdApps)
+| where ResultType in (credFailures);
+let bruteForce = base
+| summarize FailedCount = count(), DistinctIPs = dcount(IPAddress), SampleIP = any(IPAddress) by UserPrincipalName
 | where FailedCount >= 10
+| project DetectionType = "BruteForce", UserPrincipalName, IPAddress = SampleIP, FailedCount, TargetCount = 1;
+let passwordSpray = base
+| summarize TargetCount = dcount(UserPrincipalName), FailedCount = count(), SampleUser = any(UserPrincipalName) by IPAddress
+| where TargetCount >= 10
+| project DetectionType = "PasswordSpray", UserPrincipalName = SampleUser, IPAddress, FailedCount, TargetCount;
+union bruteForce, passwordSpray

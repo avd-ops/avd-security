@@ -18,7 +18,7 @@
     },
     "mode": {
       "type": "string",
-      "enum": ["offline", "live"]
+      "enum": ["self-reported", "offline", "live"]
     },
     "summary": {
       "type": "object",
@@ -38,6 +38,7 @@
         "required": ["id", "pillar", "status", "claimRef", "message"],
         "properties": {
           "id": { "type": "string" },
+          "assessCheckId": { "type": "string" },
           "pillar": { "type": "string" },
           "status": { "type": "string", "enum": ["pass", "warn", "fail"] },
           "claimRef": { "type": "string" },

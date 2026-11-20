@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "avd-security-input/v1",
+  "type": "object",
+  "required": [
+    "trustedLaunchEnabled",
+    "rdpRedirectionRestricted",
+    "screenCaptureProtectionEnabled",
+    "edrPresent",
+    "fslogixAvExclusionsConfigured",
+    "keyVaultSoftDeleteAndPurgeProtection",
+    "rbacLeastPrivilegeVerified"
+  ],
+  "properties": {
+    "trustedLaunchEnabled": { "type": "boolean" },
+    "rdpRedirectionRestricted": { "type": "boolean" },
+    "screenCaptureProtectionEnabled": { "type": "boolean" },
+    "edrPresent": { "type": "boolean" },
+    "fslogixAvExclusionsConfigured": { "type": "boolean" },
+    "keyVaultSoftDeleteAndPurgeProtection": { "type": "boolean" },
+    "rbacLeastPrivilegeVerified": { "type": "boolean" }
+  },
+  "additionalProperties": false
+}

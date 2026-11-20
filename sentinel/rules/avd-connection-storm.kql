@@ -1,0 +1,9 @@
+// AVD: High-Frequency Session Reconnect Storm
+// Tactics: Impact
+// Note: WVDConnections does not log clipboard/drive redirection payload usage;
+// monitor host EDR telemetry (DeviceEvents / DeviceFileEvents for \\tsclient\) for redirection abuse.
+WVDConnections
+| where State == "Connected"
+| where isnotempty(ClientSideIPAddress)
+| summarize ConnectionCount = count() by UserName, SessionHostName, ClientSideIPAddress
+| where ConnectionCount > 20
