@@ -2,7 +2,7 @@
 
 Part of [avd-ops](https://avd-ops.dev/), the open toolkit for Azure Virtual Desktop.
 
-AVD security control plane, posture verification, and threat detection (`avd-security`), spanning `control`, `assess`, and `operate` ([avd-ops decision 0028](https://avd-ops.dev/docs/decisions/0028-add-avd-security.html)).
+AVD security control plane (Defender for Cloud, Microsoft Sentinel KQL detections, Azure Policy baselines) and schema-validated posture scoring (`avd-security`).
 
 > [!WARNING]
 > **Community research project. Use at your own risk. No warranty.**
@@ -16,26 +16,26 @@ AVD security control plane, posture verification, and threat detection (`avd-sec
 
 | Direction | Repo | Relationship |
 |---|---|---|
-| Front door | [avd-ops](https://github.com/avd-ops/avd-ops#readme) | Overview, [security review map](https://avd-ops.dev/security.html), and platform decisions |
-| Orchestrator | [avd-landing-zone](https://github.com/avd-ops/avd-landing-zone#readme) | Invokes `avd-security` Bicep baselines alongside workload deployments |
-| Standards | [avd-assess](https://github.com/avd-ops/avd-assess#readme) | Supplies security claims (`C20`, `methods/security.md`) verified by `Invoke-AvdSecurityAudit.ps1` |
-| Inventory | [avd-current-state](https://github.com/avd-ops/avd-current-state#readme) | Consumes `security-outputs.json` (`avd-security-outputs/v1`) and `security-posture.json` |
-| Remediation | [avd-remediate](https://github.com/avd-ops/avd-remediate#readme) | Consumes failed posture findings for human-approved remediation |
+| Front door | [avd-ops](https://github.com/avd-ops/avd-ops#readme) | Overview and [security review map](https://avd-ops.dev/security.html) |
+| Standards | [avd-assess](https://github.com/avd-ops/avd-assess#readme) | Supplies `ref:*` security claims and `asm-*` check IDs |
+| Inventory | [avd-current-state](https://github.com/avd-ops/avd-current-state#readme) | Collects live estate facts (C11) that feed posture scoring |
 
 ## What it does
 
 1. **Security Control Plane (`bicep/`, `sentinel/`):**
-   - Configures Microsoft Defender for Cloud plans (`VirtualMachines`, `KeyVaults`, `StorageAccounts`) with cost-aware `lab` (`Free`) and `enterprise` (`Standard`) profiles.
-   - Assigns Azure Policy security baselines tailored to AVD (Key Vault soft-delete, Storage HTTPS/TLS 1.2, and public IP restrictions on NICs) using `Audit` in `lab` and `Deny` in `enterprise`.
-   - Deploys optional Microsoft Sentinel scheduled KQL analytics rules (`sentinel/rules/`) for AVD redirection anomalies and brute-force sign-in patterns when a Log Analytics workspace is provided.
-   - Supports `commercial` and `usgov` cloud profiles.
-2. **Continuous Posture Verification (`scripts/Invoke-AvdSecurityAudit.ps1`):**
-   - Evaluates session-host hardening (Trusted Launch/vTPM, RDP redirection restrictions, Screen Capture Protection, Watermarking, Credential Guard, Defender EDR, FSLogix AV exclusions) and control-plane hygiene (Key Vault soft-delete/purge protection, RBAC least-privilege) against `avd-assess` claims.
-   - Supports `-InputObject` / `-FixturePath` for offline CI verification as well as live estate inputs.
-3. **Redacted Contracts (`contracts/`):**
-   - Emits `security-outputs.json` (`avd-security-outputs/v1`) via `scripts/Export-AvdSecurityOutputs.ps1` and `security-posture.json` (`avd-security-posture/v1`) via `scripts/Invoke-AvdSecurityAudit.ps1`, redacting subscription and tenant GUIDs before writing.
+   - **Defender for Cloud (`bicep/modules/defender-plans.bicep`):** In `lab` (`Auto`), leaves existing subscription Defender plans untouched so it never downgrades paid protection or incurs spend. In `enterprise`, configures `Standard` (`VirtualMachines` P1, `KeyVaults`, `StorageAccounts` V2 with `OnUploadMalwareScanning` and `SensitiveDataDiscovery` disabled by default). See [docs/cost-model.md](docs/cost-model.md).
+   - **Azure Policy (`bicep/modules/policy-assignments.bicep`):** Assigns 3 built-in policies (Key Vault soft-delete, Storage HTTPS secure transfer, NIC no public IP) with `Audit` in `lab` and `Deny` in `enterprise` (supports `policyNotScopes`).
+   - **Microsoft Sentinel (`bicep/modules/sentinel-analytics.bicep`):** Opt-in (`enableSentinel = false` by default) KQL rules loaded directly from `sentinel/rules/` (`avd-connection-storm.kql` and `avd-bruteforce-signin.kql`) targeting an existing Sentinel-onboarded Log Analytics workspace.
+   - Currently targets `commercial` cloud (`usgov` policy parity is pending C19 verification).
+2. **Self-Reported Posture Scoring (`scripts/Invoke-AvdSecurityAudit.ps1`, PowerShell 7+):**
+   - Validates caller-supplied evidence (`-InputData` or `-FixturePath`) against [avd-security-input.schema.json](contracts/avd-security-input.schema.json) (strict booleans, no string coercion, no unknown keys) and emits `avd-security-posture/v1` (`mode: "self-reported"`) mapped to verified `avd-assess` claims and `asm-*` check IDs.
+3. **Redacted Outputs & Cleanup (`scripts/`):**
+   - [Export-AvdSecurityOutputs.ps1](scripts/Export-AvdSecurityOutputs.ps1) emits `avd-security-outputs/v1` with GUIDs redacted.
+   - [Remove-AvdSecurityTier.ps1](scripts/Remove-AvdSecurityTier.ps1) resets Defender plans back to `Free` (supports `-WhatIf`).
 
 ## Quickstart
+
+Requires PowerShell 7+ (`pwsh`) and Bicep CLI.
 
 ```powershell
 # Validate Bicep templates
@@ -48,7 +48,8 @@ Invoke-Pester -Path tests/AvdSecurity.Tests.ps1 -Output Detailed
 ## Docs
 
 - Agent instructions & guardrails: [AGENTS.md](AGENTS.md)
-- Contracts: [contracts/avd-security-outputs.schema.json](contracts/avd-security-outputs.schema.json), [contracts/avd-security-posture.schema.json](contracts/avd-security-posture.schema.json)
+- Cost model & teardown: [docs/cost-model.md](docs/cost-model.md)
+- Contracts: [avd-security-outputs.schema.json](contracts/avd-security-outputs.schema.json), [avd-security-posture.schema.json](contracts/avd-security-posture.schema.json), [avd-security-input.schema.json](contracts/avd-security-input.schema.json)
 
 ## Contributing
 

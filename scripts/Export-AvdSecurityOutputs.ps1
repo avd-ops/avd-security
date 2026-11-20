@@ -1,3 +1,4 @@
+#Requires -Version 7.0
 <#
 .SYNOPSIS
     Emits a redacted avd-security-outputs/v1 manifest from deployment outputs.
@@ -7,16 +8,21 @@ param(
     [ValidateSet('lab', 'enterprise')]
     [string]$CostProfile = 'lab',
 
-    [ValidateSet('commercial', 'usgov')]
+    [ValidateSet('commercial')]
     [string]$CloudProfile = 'commercial',
 
-    [ValidateSet('Free', 'Standard')]
-    [string]$DefenderTier = 'Free',
+    [ValidatePattern('^[a-z0-9-]{3,16}$')]
+    [string]$NamePrefix = 'avd-sec',
+
+    [bool]$DefenderPlansDeployed = $false,
+
+    [ValidateSet('Unchanged', 'Free', 'Standard')]
+    [string]$DefenderTier = 'Unchanged',
 
     [ValidateSet('Audit', 'Deny')]
     [string]$PolicyEffect = 'Audit',
 
-    [bool]$SentinelEnabled = $false,
+    [object]$SentinelEnabled = $false,
 
     [string[]]$PolicyAssignmentIds = @(),
 
@@ -25,6 +31,14 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+# Parse SentinelEnabled strictly so string "false" from az deployment outputs never coerces to $true.
+$sentinelBool = switch ($SentinelEnabled) {
+    { $_ -is [bool] } { $_; break }
+    'true'            { $true; break }
+    'false'           { $false; break }
+    default           { throw "SentinelEnabled must be a boolean or 'true'/'false', got: '$SentinelEnabled'" }
+}
 
 # Extract only the assignment short names and strip any accidental GUIDs.
 $guidPattern = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
@@ -42,9 +56,10 @@ $manifest = [ordered]@{
     generatedAt           = (Get-Date).ToUniversalTime().ToString('o')
     costProfile           = $CostProfile
     cloudProfile          = $CloudProfile
+    defenderPlansDeployed = $DefenderPlansDeployed
     defenderTier          = $DefenderTier
     policyEffect          = $PolicyEffect
-    sentinelEnabled       = $SentinelEnabled
+    sentinelEnabled       = $sentinelBool
     policyAssignmentNames = $assignmentNames
 }
 
