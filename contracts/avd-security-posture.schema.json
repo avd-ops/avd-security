@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "avd-security-posture/v1",
+  "type": "object",
+  "required": [
+    "schema",
+    "checkedAt",
+    "mode",
+    "summary",
+    "checks"
+  ],
+  "properties": {
+    "schema": {
+      "const": "avd-security-posture/v1"
+    },
+    "checkedAt": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["offline", "live"]
+    },
+    "summary": {
+      "type": "object",
+      "required": ["total", "pass", "warn", "fail"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "pass": { "type": "integer", "minimum": 0 },
+        "warn": { "type": "integer", "minimum": 0 },
+        "fail": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "pillar", "status", "claimRef", "message"],
+        "properties": {
+          "id": { "type": "string" },
+          "pillar": { "type": "string" },
+          "status": { "type": "string", "enum": ["pass", "warn", "fail"] },
+          "claimRef": { "type": "string" },
+          "message": { "type": "string" },
+          "remediationHint": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,7 @@
+# Outputs and test artifacts
+testResults.xml
+*.json.local
+bicep/*.json
+!contracts/*.json
+.DS_Store
+Thumbs.db

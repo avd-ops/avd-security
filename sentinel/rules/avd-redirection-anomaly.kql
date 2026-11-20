@@ -1,0 +1,7 @@
+// AVD: Unexpected Device or Clipboard Redirection Activity
+// Tactics: Collection, Exfiltration
+WVDConnections
+| where State == "Connected"
+| where isnotempty(ClientSideIPAddress)
+| summarize ConnectionCount = count() by UserName, SessionHostName, ClientSideIPAddress, bin(TimeGenerated, 1h)
+| where ConnectionCount > 20

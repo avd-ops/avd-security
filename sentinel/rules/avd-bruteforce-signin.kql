@@ -1,0 +1,7 @@
+// AVD: Repeated Failed Sign-In Attempts
+// Tactics: CredentialAccess, InitialAccess
+SigninLogs
+| where AppDisplayName has "Azure Virtual Desktop" or AppDisplayName has "Windows Virtual Desktop"
+| where ResultType != "0"
+| summarize FailedCount = count(), DistinctIPs = dcount(IPAddress) by UserPrincipalName, bin(TimeGenerated, 30m)
+| where FailedCount >= 10

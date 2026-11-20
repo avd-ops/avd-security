@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "avd-security-outputs/v1",
+  "type": "object",
+  "required": [
+    "schema",
+    "generatedAt",
+    "costProfile",
+    "cloudProfile",
+    "defenderTier",
+    "policyEffect",
+    "sentinelEnabled",
+    "policyAssignmentNames"
+  ],
+  "properties": {
+    "schema": {
+      "const": "avd-security-outputs/v1"
+    },
+    "generatedAt": {
+      "type": "string"
+    },
+    "costProfile": {
+      "type": "string",
+      "enum": ["lab", "enterprise"]
+    },
+    "cloudProfile": {
+      "type": "string",
+      "enum": ["commercial", "usgov"]
+    },
+    "defenderTier": {
+      "type": "string",
+      "enum": ["Free", "Standard"]
+    },
+    "policyEffect": {
+      "type": "string",
+      "enum": ["Audit", "Deny"]
+    },
+    "sentinelEnabled": {
+      "type": "boolean"
+    },
+    "policyAssignmentNames": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}
