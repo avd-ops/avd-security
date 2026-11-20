@@ -2,7 +2,7 @@
 
 Part of [avd-ops](https://avd-ops.dev/), the open toolkit for Azure Virtual Desktop.
 
-AVD security control plane (Defender for Cloud, Microsoft Sentinel KQL detections, Azure Policy baselines) and schema-validated posture scoring (`avd-security`).
+AVD security control plane (Defender for Cloud, Microsoft Sentinel KQL detections, Azure Policy baselines) and C11-backed posture scoring (`avd-security`).
 
 > [!WARNING]
 > **Community research project. Use at your own risk. No warranty.**
@@ -17,20 +17,20 @@ AVD security control plane (Defender for Cloud, Microsoft Sentinel KQL detection
 | Direction | Repo | Relationship |
 |---|---|---|
 | Front door | [avd-ops](https://github.com/avd-ops/avd-ops#readme) | Overview and [security review map](https://avd-ops.dev/security.html) |
-| Standards | [avd-assess](https://github.com/avd-ops/avd-assess#readme) | Supplies `ref:*` security claims and `asm-*` check IDs |
-| Inventory | [avd-current-state](https://github.com/avd-ops/avd-current-state#readme) | Collects live estate facts (C11) that feed posture scoring |
+| Standards | [avd-assess](https://github.com/avd-ops/avd-assess#readme) | Pins `C33` (`avd-security-outputs/v1`), `C34` (`avd-security-posture/v1`), `C19` cloud environments, `ref:*` claims, and `asm-*` check IDs |
+| Inventory | [avd-current-state](https://github.com/avd-ops/avd-current-state#readme) | Collects live estate facts (`C11`) consumed by `Invoke-AvdSecurityAudit.ps1` |
 
 ## What it does
 
 1. **Security Control Plane (`bicep/`, `sentinel/`):**
    - **Defender for Cloud (`bicep/modules/defender-plans.bicep`):** In `lab` (`Auto`), leaves existing subscription Defender plans untouched so it never downgrades paid protection or incurs spend. In `enterprise`, configures `Standard` (`VirtualMachines` P1, `KeyVaults`, `StorageAccounts` V2 with `OnUploadMalwareScanning` and `SensitiveDataDiscovery` disabled by default). See [docs/cost-model.md](docs/cost-model.md).
-   - **Azure Policy (`bicep/modules/policy-assignments.bicep`):** Assigns 3 built-in policies (Key Vault soft-delete, Storage HTTPS secure transfer, NIC no public IP) with `Audit` in `lab` and `Deny` in `enterprise` (supports `policyNotScopes`).
-   - **Microsoft Sentinel (`bicep/modules/sentinel-analytics.bicep`):** Opt-in (`enableSentinel = false` by default) KQL rules loaded directly from `sentinel/rules/` (`avd-connection-storm.kql` and `avd-bruteforce-signin.kql`) targeting an existing Sentinel-onboarded Log Analytics workspace.
-   - Currently targets `commercial` cloud (`usgov` policy parity is pending C19 verification).
-2. **Self-Reported Posture Scoring (`scripts/Invoke-AvdSecurityAudit.ps1`, PowerShell 7+):**
-   - Validates caller-supplied evidence (`-InputData` or `-FixturePath`) against [avd-security-input.schema.json](contracts/avd-security-input.schema.json) (strict booleans, no string coercion, no unknown keys) and emits `avd-security-posture/v1` (`mode: "self-reported"`) mapped to verified `avd-assess` claims and `asm-*` check IDs.
+   - **Azure Policy (`bicep/modules/policy-assignments.bicep`):** Assigns 6 built-in policies (Key Vault soft-delete, Key Vault purge protection, Storage HTTPS secure transfer, Storage minimum TLS 1.2, NIC no public IP with `resourceSelectors`, and VM Trusted Launch `Audit` with `resourceSelectors`), using `Audit` in `lab` and `Deny` (where supported) in `enterprise`.
+   - **Microsoft Sentinel (`bicep/modules/sentinel-analytics.bicep`):** Opt-in (`enableSentinel = false` by default) KQL rules loaded from `sentinel/rules/` (`avd-connection-storm.kql`, `avd-bruteforce-signin.kql`, `avd-tsclient-exfiltration.kql`, `avd-local-admin-change.kql`).
+   - **Cloud parity (`commercial` and `usgov`):** Aligned with `avd-assess` C19; see [docs/usgov-parity.md](docs/usgov-parity.md).
+2. **Posture Verification (`scripts/Invoke-AvdSecurityAudit.ps1`, PowerShell 7+):**
+   - Consumes `avd-current-state` `C11` fact bundles (`-C11Facts` / `-C11FactsPath`, `mode: "c11-facts"`) or schema-validated self-reported fixtures (`-InputData` / `-FixturePath`, `mode: "self-reported"`) and emits `C34` (`avd-security-posture/v1`).
 3. **Redacted Outputs & Cleanup (`scripts/`):**
-   - [Export-AvdSecurityOutputs.ps1](scripts/Export-AvdSecurityOutputs.ps1) emits `avd-security-outputs/v1` with GUIDs redacted.
+   - [Export-AvdSecurityOutputs.ps1](scripts/Export-AvdSecurityOutputs.ps1) emits `C33` (`avd-security-outputs/v1`) with GUIDs redacted.
    - [Remove-AvdSecurityTier.ps1](scripts/Remove-AvdSecurityTier.ps1) resets Defender plans back to `Free` (supports `-WhatIf`).
 
 ## Quickstart
@@ -49,6 +49,7 @@ Invoke-Pester -Path tests/AvdSecurity.Tests.ps1 -Output Detailed
 
 - Agent instructions & guardrails: [AGENTS.md](AGENTS.md)
 - Cost model & teardown: [docs/cost-model.md](docs/cost-model.md)
+- US Government parity: [docs/usgov-parity.md](docs/usgov-parity.md)
 - Upstream sources of truth & roadmap: [docs/upstream-sources.md](docs/upstream-sources.md)
 - Contracts: [avd-security-outputs.schema.json](contracts/avd-security-outputs.schema.json), [avd-security-posture.schema.json](contracts/avd-security-posture.schema.json), [avd-security-input.schema.json](contracts/avd-security-input.schema.json)
 
