@@ -49,6 +49,7 @@ Invoke-Pester -Path tests/AvdSecurity.Tests.ps1 -Output Detailed
 
 - Agent instructions & guardrails: [AGENTS.md](AGENTS.md)
 - Cost model & teardown: [docs/cost-model.md](docs/cost-model.md)
+- Upstream sources of truth & roadmap: [docs/upstream-sources.md](docs/upstream-sources.md)
 - Contracts: [avd-security-outputs.schema.json](contracts/avd-security-outputs.schema.json), [avd-security-posture.schema.json](contracts/avd-security-posture.schema.json), [avd-security-input.schema.json](contracts/avd-security-input.schema.json)
 
 ## Contributing
