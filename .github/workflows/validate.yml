@@ -14,6 +14,24 @@ jobs:
       - name: Build Bicep templates
         run: az bicep build --file bicep/main.bicep
 
+      - name: Install PowerShell quality modules
+        shell: pwsh
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force
+          Install-Module -Name PSRule.Rules.Azure -Scope CurrentUser -Force
+
+      - name: Run PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          $hits = Invoke-ScriptAnalyzer -Path scripts -Recurse -Settings PSScriptAnalyzerSettings.psd1
+          if ($hits) { $hits | Format-Table -AutoSize; exit 1 }
+
+      - name: Run PSRule for Azure on Bicep
+        shell: pwsh
+        run: |
+          Assert-PSRule -Module PSRule.Rules.Azure -InputPath bicep/main.bicep -Outcome Fail -WarningAction SilentlyContinue
+
       - name: Run Pester tests
         shell: pwsh
         run: |

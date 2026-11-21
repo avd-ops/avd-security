@@ -31,6 +31,7 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+Write-Verbose "Exporting security outputs for prefix '$NamePrefix'"
 
 # Parse SentinelEnabled strictly so string "false" from az deployment outputs never coerces to $true.
 $sentinelBool = switch ($SentinelEnabled) {
