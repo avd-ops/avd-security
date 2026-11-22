@@ -19,16 +19,16 @@ param notScopes array = []
 // Built-in Azure Policy definitions (tenant-level resources, identical GUIDs in commercial and usgov):
 // 1. Key vaults should have soft delete enabled
 // 2. Key vaults should have deletion protection enabled (purge protection)
-// 3. Secure transfer to storage accounts should be enabled
-// 4. Storage accounts should have the specified minimum TLS version (TLS1_2)
-// 5. Network interfaces should not have public IPs (scoped via resourceSelectors)
-// 6. Virtual Machine should have TrustedLaunch enabled (Audit only; Deny not supported by built-in)
+// 3. Storage accounts should have the specified minimum TLS version (TLS1_2)
+// 4. Network interfaces should not have public IPs (parameterless built-in; uses DoNotEnforce in Audit/lab mode)
+// 5. Virtual Machine should have TrustedLaunch enabled (Audit only; Deny not supported by built-in)
 var assignments = [
   {
     name: '${namePrefix}-kv-softdelete'
     displayName: 'AVD Security: Key vaults should have soft delete enabled'
     definitionGuid: '1e66c121-a66a-4b1f-9b83-0fd99bf0fc2d'
     nonComplianceMessage: 'AVD Key Vaults must have soft delete enabled.'
+    enforcementMode: 'Default'
     resourceSelectors: []
     parameters: {
       effect: {
@@ -41,18 +41,7 @@ var assignments = [
     displayName: 'AVD Security: Key vaults should have deletion protection enabled'
     definitionGuid: '0b60c0b2-2dc2-4e1c-b5c9-abbed971de53'
     nonComplianceMessage: 'AVD Key Vaults must enable purge protection.'
-    resourceSelectors: []
-    parameters: {
-      effect: {
-        value: policyEffect
-      }
-    }
-  }
-  {
-    name: '${namePrefix}-st-https'
-    displayName: 'AVD Security: Secure transfer to storage accounts should be enabled'
-    definitionGuid: '404c3081-a854-4457-ae30-26a93ef943f9'
-    nonComplianceMessage: 'AVD storage accounts must require secure transfer (HTTPS).'
+    enforcementMode: 'Default'
     resourceSelectors: []
     parameters: {
       effect: {
@@ -65,6 +54,7 @@ var assignments = [
     displayName: 'AVD Security: Storage accounts should have minimum TLS 1.2'
     definitionGuid: 'fe83a0eb-a853-422d-aac2-1bffd182c5d0'
     nonComplianceMessage: 'AVD storage accounts must enforce TLS 1.2 minimum.'
+    enforcementMode: 'Default'
     resourceSelectors: []
     parameters: {
       effect: {
@@ -80,6 +70,7 @@ var assignments = [
     displayName: 'AVD Security: Network interfaces should not have public IPs'
     definitionGuid: '83a86a26-fd1f-447c-b59d-e51f44264114'
     nonComplianceMessage: 'Session host network interfaces must not attach public IP addresses.'
+    enforcementMode: policyEffect == 'Audit' ? 'DoNotEnforce' : 'Default'
     resourceSelectors: [
       {
         name: 'nicResourceType'
@@ -93,17 +84,14 @@ var assignments = [
         ]
       }
     ]
-    parameters: {
-      effect: {
-        value: policyEffect
-      }
-    }
+    parameters: {}
   }
   {
     name: '${namePrefix}-vm-trustedlaunch'
     displayName: 'AVD Security: Virtual machines should use Trusted Launch'
     definitionGuid: 'c95b54ad-0614-4633-ab29-104b01235cbf'
     nonComplianceMessage: 'AVD session hosts should enable Trusted Launch (Secure Boot + vTPM).'
+    enforcementMode: 'Default'
     resourceSelectors: [
       {
         name: 'vmResourceType'
@@ -140,7 +128,7 @@ resource policyAssignment 'Microsoft.Authorization/policyAssignments@2024-04-01'
           message: item.nonComplianceMessage
         }
       ]
-      enforcementMode: 'Default'
+      enforcementMode: item.enforcementMode
     }
   }
 ]

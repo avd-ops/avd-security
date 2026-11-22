@@ -13,6 +13,7 @@ Describe 'avd-security Bicep control plane' {
             $compiled | Should -Match 'fe83a0eb-a853-422d-aac2-1bffd182c5d0'
             $compiled | Should -Match '0b60c0b2-2dc2-4e1c-b5c9-abbed971de53'
             $compiled | Should -Match 'c95b54ad-0614-4633-ab29-104b01235cbf'
+            $compiled | Should -Not -Match '404c3081-a854-4457-ae30-26a93ef943f9'
         }
         finally {
             if (Test-Path $tempOut) { Remove-Item $tempOut -Force }
